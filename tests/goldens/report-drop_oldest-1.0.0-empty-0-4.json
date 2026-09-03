@@ -1,0 +1,1 @@
+{"budget_unmet":false,"dropped_turn_ids":[],"estimator_ratio":null,"kept_turn_ids":[],"masked_turn_ids":[],"plan_hash":"026c77e6cadeb4a88d95d975e3c1e7592b540a99199e074d9fd729e3c262a12e","policy_name":"drop_oldest","policy_version":"1.0.0","summarized_turn_ids":[],"summary_turn_ids":[],"tokens_after_estimate":0,"tokens_before":0,"turns_after":0,"turns_before":0}
