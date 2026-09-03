@@ -13,7 +13,6 @@ from __future__ import annotations
 import pytest
 from hypothesis import given
 from hypothesis import strategies as st
-from strategies import transcripts_budgets_and_plans
 
 from cutctx import (
     SUMMARY_TURN_ID_PREFIX,
@@ -25,6 +24,7 @@ from cutctx import (
     SummaryMissing,
     Transcript,
 )
+from strategies import transcripts_budgets_and_plans
 
 EXECUTOR = CompactionExecutor()
 
