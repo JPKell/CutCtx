@@ -1,0 +1,89 @@
+[importlinter]
+root_package = cutctx
+include_external_packages = True
+
+[importlinter:contract:no-application-imports]
+name = CutCtx must not import applications
+type = forbidden
+source_modules = cutctx
+forbidden_modules =
+    freeweight
+    loadcoach
+    ideapress
+    promptcadence
+
+[importlinter:contract:no-sibling-packages]
+name = CutCtx must not import sibling capability packages
+type = forbidden
+source_modules = cutctx
+forbidden_modules =
+    setspec
+    modelrack
+    sweatmeter
+    weightsdb
+    mirrorwall
+    toolyard
+    loadledger
+    commissioner
+    spotcheck
+
+[importlinter:contract:no-second-path-to-a-model]
+# ADR-0052 decision 2 and gold standards §2: purity is proven, not claimed. The package holds no
+# HTTP client and no provider, so summarization *cannot* be performed here even by accident — it
+# crosses the boundary as a SummarizationRequest. `no-sibling-packages` above already bars
+# `modelrack`; this contract bars the do-it-yourself alternative.
+#
+# allow_indirect_imports: these contracts describe what *this package's own modules* import.
+# `baseaicore` is stdlib-only, so no chain reaches these today, but a chain through a dependency
+# would be that dependency's budget to answer for, not a CutCtx import to fix.
+name = CutCtx must hold no HTTP client and no socket
+allow_indirect_imports = True
+type = forbidden
+source_modules = cutctx
+forbidden_modules =
+    httpx
+    requests
+    aiohttp
+    urllib3
+    urllib
+    http
+    socket
+    ssl
+    asyncio
+
+[importlinter:contract:no-persistence]
+# ADR-0052 decision 2: no database, no filesystem. CutCtx never persists anything (spec §10); the
+# caller stores plans and reports. The stdlib halves matter as much as the third-party ones: a
+# `pathlib` import here would be the first step of a cache nobody asked for.
+name = CutCtx must touch no database and no filesystem
+allow_indirect_imports = True
+type = forbidden
+source_modules = cutctx
+forbidden_modules =
+    sqlalchemy
+    alembic
+    sqlite3
+    os
+    io
+    pathlib
+    shutil
+    tempfile
+    glob
+    subprocess
+    logging
+
+[importlinter:contract:no-clock-and-no-randomness]
+# The one package in the suite that needs no clock. A plan carries no time, because a plan must be
+# byte-identical on re-derivation (spec §11 contract 4) and appears in an audit record. If a
+# `CompactionReport` wants a timestamp, the caller stamps it. Randomness is barred for the same
+# reason: it is the other way a re-derived plan stops matching the one that was recorded.
+name = CutCtx must read no clock and draw no randomness
+allow_indirect_imports = True
+type = forbidden
+source_modules = cutctx
+forbidden_modules =
+    datetime
+    time
+    random
+    secrets
+    uuid
