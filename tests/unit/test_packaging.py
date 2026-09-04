@@ -46,6 +46,8 @@ EXPECTED_PUBLIC_API = {
     "DropOldestPolicy",
     "ObservationMaskingPolicy",
     "SummarizingPolicy",
+    "PolicyChain",
+    "default_chain",
     # The two policy formats a caller may need to recognise: the masking stub's label and the
     # prefix a derived summary group id carries. Neither is a knob; both are exported so a
     # consumer reading a plan can tell a shipped policy's output from its own.

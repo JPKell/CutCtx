@@ -51,7 +51,9 @@ from cutctx.policies import (
     GROUP_ID_PREFIX,
     DropOldestPolicy,
     ObservationMaskingPolicy,
+    PolicyChain,
     SummarizingPolicy,
+    default_chain,
 )
 from cutctx.types import (
     EMPTY_METADATA,
@@ -71,7 +73,9 @@ from cutctx.types import (
 )
 
 __all__ = [
+    "default_chain",
     "SummarizingPolicy",
+    "PolicyChain",
     "ObservationMaskingPolicy",
     "GROUP_ID_PREFIX",
     "DEFAULT_PLACEHOLDER",
