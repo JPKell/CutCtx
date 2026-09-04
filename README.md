@@ -4,10 +4,10 @@ Deterministic transcript compaction for the Local AI Suite. Given a transcript a
 CutCtx decides which turns to **keep, mask, summarize or drop**, and applies that decision to
 produce a compacted view plus an auditable account of what was done to it.
 
-**Status: Phase 1, unreleased.** The transcript model, the invariants, the plan/executor split and
-`DropOldestPolicy` are built and gated. `ObservationMaskingPolicy`, `SummarizingPolicy` and
-`PolicyChain` arrive in Phase 2, which is when `cutctx 0.1.0` is published. Nothing here is on PyPI
-yet.
+**Status: Phase 2 complete, `0.1.0` prepared.** The transcript model, the invariants, the
+plan/executor split and all four shipped policies — `ObservationMaskingPolicy`,
+`SummarizingPolicy`, `DropOldestPolicy` and `PolicyChain` — are built and gated. Publication is an
+operator step and has not happened; nothing here is on PyPI yet.
 
 * Import name and distribution name: `cutctx`
 * Runtime dependencies: `baseaicore`, and nothing else
@@ -71,6 +71,34 @@ makes the decision auditable *before* anything is spent.
 | **Plans are byte-identical on re-derivation** | Same transcript, budget and configuration ⇒ the same bytes, on every platform — because a plan appears in an audit record |
 | **An estimate is never a count** | Token figures are estimates; the character-ratio default's ratio rides on the plan that used it |
 | **Purity is proven, not claimed** | No model, no HTTP client, no database, no filesystem, no clock, no logging — asserted by an import-graph test and by `import-linter` |
+| **A masked stub carries a hash, never an excerpt** | The original may hold a secret, and a "first 200 characters" preview is a leak with an extra step |
+| **A summarization is planned, never performed** | The package emits a `SummarizationRequest` naming turns, a token target and a *prompt id*; the caller fulfils it through its own inference path |
+| **A chain composes over a projection** | Applying needs summaries, and the package produces none — so composition works from what a plan *would* produce, and one plan is built once against the real transcript |
+
+## The four shipped policies
+
+| Policy | What it does | What it will not do |
+|---|---|---|
+| `ObservationMaskingPolicy` | Replaces old `TOOL` bodies with a labelled stub carrying the original's digest and estimate | Touch a non-`TOOL` turn, mask within the `keep_recent_results` floor, or make a turn bigger than it was |
+| `SummarizingPolicy` | Plans one summarization of the oldest contiguous unpinned span | Split an exchange, take a span shorter than `min_span_turns`, or produce prompt text |
+| `DropOldestPolicy` | Drops whole exchanges, oldest first — the deterministic last resort | Split an exchange, or truncate silently |
+| `PolicyChain` / `default_chain` | Runs them in order, stopping when the budget fits | Apply an intermediate plan, or build more than one plan |
+
+`default_chain(prompt_id=…)` is masking → summarizing → drop-oldest, and the order is an argument
+about cost: masking is free, summarizing costs a model call but keeps the substance, dropping keeps
+nothing at all.
+
+## Acceptance
+
+`acceptance/plan_and_apply.py` is spec §20 criterion 2 as a runnable check: it plans and applies a
+compaction with a hand-supplied summary, using only `cutctx` and `baseaicore`. It exits non-zero
+when a claim fails, so it is a check rather than a demonstration.
+
+```bash
+python -m venv /tmp/cutctx-acceptance
+/tmp/cutctx-acceptance/bin/pip install .
+/tmp/cutctx-acceptance/bin/python acceptance/plan_and_apply.py
+```
 
 The rules live in one module, `cutctx._invariants`, and **there is no way to build a plan that
 skips it**: `CompactionPlan`'s constructor takes the transcript and budget the plan is *for* and
