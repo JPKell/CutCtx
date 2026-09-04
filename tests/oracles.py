@@ -22,7 +22,13 @@ from cutctx import CompactionBudget, Role
 if TYPE_CHECKING:
     from cutctx import Transcript
 
-__all__ = ["untouchable_ids", "untouchable_total", "exchange_sets"]
+__all__ = [
+    "untouchable_ids",
+    "untouchable_total",
+    "exchange_sets",
+    "maskable_ids",
+    "exchange_rule_holds",
+]
 
 
 def untouchable_ids(transcript: Transcript, budget: CompactionBudget) -> set[str]:
@@ -61,3 +67,56 @@ def exchange_sets(transcript: Transcript) -> list[set[str]]:
         else:
             by_call.setdefault(turn.tool_call_id, set()).add(turn.turn_id)
     return singletons + list(by_call.values())
+
+
+def maskable_ids(
+    transcript: Transcript, budget: CompactionBudget, keep_recent_results: int
+) -> set[str]:
+    """Return the turns spec §7 says ``ObservationMaskingPolicy`` may mask.
+
+    "masks TOOL-result bodies beyond the N most recent" — so: a ``TOOL`` turn, outside the
+    untouchable set (contract 2), and not among the last ``N`` ``TOOL`` turns of the transcript.
+
+    Restated from the spec, in a different shape from the policy: the recent set is built by
+    counting *backwards* through the transcript rather than by slicing a list of results, so a
+    policy that sliced wrongly — ``results[-0:]`` is the whole list, not none of it — cannot hide
+    behind this oracle.
+    """
+    untouchable = untouchable_ids(transcript, budget)
+    recent: set[str] = set()
+    for turn in reversed(transcript.turns):
+        if len(recent) >= keep_recent_results:
+            break
+        if turn.role is Role.TOOL:
+            recent.add(turn.turn_id)
+    return {
+        turn.turn_id
+        for turn in transcript.turns
+        if turn.role is Role.TOOL and turn.turn_id not in untouchable and turn.turn_id not in recent
+    }
+
+
+def exchange_rule_holds(actions: dict[str, str], transcript: Transcript) -> bool:
+    """Return whether every exchange is wholly retained or wholly removed by one action.
+
+    Spec §11 contract 3 as `C1_HANDOFF.md` §4 reads it, restated:
+
+        Within one exchange, either every member is retained (``keep``/``mask``, mixed freely), or
+        every member is removed by the **same** action — all ``drop``, or all ``summarize`` into
+        the same group.
+
+    Args:
+        actions: turn id → ``"keep"``, ``"mask"``, ``"drop"``, or ``"summarize:<group>"``.
+        transcript: The transcript the actions are over.
+
+    Returns:
+        Whether the rule holds for every exchange.
+    """
+    retained = {"keep", "mask"}
+    for exchange in exchange_sets(transcript):
+        verdicts = {actions[turn_id] for turn_id in exchange}
+        if verdicts <= retained:
+            continue
+        if len(verdicts) != 1:
+            return False
+    return True
