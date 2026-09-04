@@ -98,16 +98,33 @@ class CompactionPolicy(Protocol):
     version: str
     def decide(self, transcript: Transcript, budget: CompactionBudget) -> CompactionPlan: ...
 
-ObservationMaskingPolicy(keep_recent_results: int = 2, placeholder: str = …)
+ObservationMaskingPolicy(keep_recent_results: int = 2, placeholder: str = DEFAULT_PLACEHOLDER,
+                         *, estimator: TokenEstimator | None = None)
     # masks TOOL-result bodies beyond the N most recent, keeping a labelled stub with the
-    # original's hash and token estimate — reasoning stays, bulk goes
+    # original's hash and token estimate — reasoning stays, bulk goes. Stops as soon as the budget
+    # fits, oldest first; `keep_recent_results` is a floor that does not move for the budget.
+    # `estimator` sizes the stub: None is the CharRatioEstimator default, and then the plan
+    # carries its ratio (§11.5). `placeholder` is the label only — the digest and the original
+    # estimate are appended whatever it says, so §14's guarantee is not a matter of discipline.
 SummarizingPolicy(prompt_id: str, target_ratio: float = 0.2, min_span_turns: int = 4)
     # replaces the oldest contiguous unpinned span with one summary turn; emits a
-    # SummarizationRequest the caller must fulfil
+    # SummarizationRequest the caller must fulfil. One span per plan, hence one model call.
 DropOldestPolicy()
     # drops oldest unpinned turns (tool pairs together) until the budget fits — the
     # deterministic last resort
 PolicyChain(policies: Sequence[CompactionPolicy])
+    # runs them in order, stopping when the budget fits, composing over a *projection* of each
+    # plan rather than an applied view — because applying needs summaries and this package never
+    # produces one (ADR-0052). One plan is built, once, against the real transcript.
+    # `.name` names every member and its version, so a report says what produced the view.
+default_chain(*, prompt_id: str, keep_recent_results: int = 2, target_ratio: float = 0.2,
+              min_span_turns: int = 4) -> PolicyChain
+    # masking → summarizing → drop-oldest: free, then a model call, then irreversible loss
+
+DEFAULT_PLACEHOLDER: Final[str]   # the masking stub's label
+GROUP_ID_PREFIX: Final[str]       # what a derived summary group id starts with; the id is a digest
+                                  # of the span's turn ids — never a counter and never a uuid, or
+                                  # composing the policies differently would renumber it (§11.4)
 
 @dataclass(frozen=True, slots=True)
 class TurnAction:
@@ -170,9 +187,26 @@ None. CutCtx never persists anything; the caller stores plans and reports (Promp
 2. **The system turn and pinned turns are untouchable**, and the `protected_recent_turns` tail is
    never masked, summarized or dropped. A budget smaller than the untouchable set raises
    `BudgetUnsatisfiable` with the numbers — it is never "solved" by violating the invariant.
-3. **A tool call and its result travel together**: masked together, summarized in the same group,
-   or dropped as a pair — never separated, because an orphaned call or result is a malformed
-   transcript to every provider.
+3. **A tool call and its result travel together.** Within one **exchange** — every turn sharing a
+   `tool_call_id`, however far apart they sit — either *every* member is **retained** (`KEEP` and
+   `MASK`, mixed freely), or *every* member is **removed by the same action**: all `DROP`, or all
+   `SUMMARIZE` into the same group. Never separated, because an orphaned call or result is a
+   malformed transcript to every provider.
+
+   The prohibition is on **separation**, and what separates is *removal*. `KEEP` and `MASK` both
+   leave a turn in the view at its own position, carrying its `tool_call_id`, so masking a result
+   beside a kept call orphans nothing — which is what makes the `ObservationMaskingPolicy` §7
+   ships legal under this contract at all. An earlier wording said "masked together", which read
+   literally forbade that policy; this is the rule the implementation has always enforced, now
+   stated as it is enforced.
+
+   `tool_call_id` is a **correlation** id rather than a per-call one: one assistant turn may issue
+   several calls, so the relation is not one-to-one, and every turn carrying the value belongs to
+   one exchange. A `TOOL` turn whose correlation id matches nothing is an exchange of one, which is
+   what an earlier compaction round leaves behind. Protection propagates through an exchange — an
+   untouchable member makes the whole exchange unremovable — but it does **not** move the
+   `BudgetUnsatisfiable` threshold, which is computed over the strict untouchable set of contract 2,
+   because the unremovable members may still be maskable.
 4. **Determinism.** Same transcript + budget + policy configuration ⇒ byte-identical plan, on
    every platform and Python version — golden-tested, because plans appear in audit records.
 5. **Honest estimates.** Every plan carries `tokens_before`, `tokens_after_estimate` and the

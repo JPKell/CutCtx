@@ -44,6 +44,13 @@ EXPECTED_PUBLIC_API = {
     "TokenEstimator",
     # Policies
     "DropOldestPolicy",
+    "ObservationMaskingPolicy",
+    "SummarizingPolicy",
+    # The two policy formats a caller may need to recognise: the masking stub's label and the
+    # prefix a derived summary group id carries. Neither is a knob; both are exported so a
+    # consumer reading a plan can tell a shipped policy's output from its own.
+    "DEFAULT_PLACEHOLDER",
+    "GROUP_ID_PREFIX",
     # Errors
     "BudgetUnsatisfiable",
     "CompactionError",
