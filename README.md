@@ -4,10 +4,9 @@ Deterministic transcript compaction for the Local AI Suite. Given a transcript a
 CutCtx decides which turns to **keep, mask, summarize or drop**, and applies that decision to
 produce a compacted view plus an auditable account of what was done to it.
 
-**Status: Phase 2 complete, `0.1.0` prepared.** The transcript model, the invariants, the
+**Status: Phase 2 complete, `0.1.0` — on PyPI.** The transcript model, the invariants, the
 plan/executor split and all four shipped policies — `ObservationMaskingPolicy`,
-`SummarizingPolicy`, `DropOldestPolicy` and `PolicyChain` — are built and gated. Publication is an
-operator step and has not happened; nothing here is on PyPI yet.
+`SummarizingPolicy`, `DropOldestPolicy` and `PolicyChain` — are built and gated.
 
 * Import name and distribution name: `cutctx`
 * Runtime dependencies: `baseaicore`, and nothing else
