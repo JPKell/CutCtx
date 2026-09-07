@@ -1,7 +1,7 @@
 # CutCtx — Specification
 
 **Type:** Python package · **Import/distribution name:** `cutctx` · **Layer:** 3 (capability package)
-**Status:** Specified, not implemented. Part of the PromptCadence arc
+**Status:** Implemented and published as `cutctx 0.1.0`. Part of the PromptCadence arc
 ([roadmap](../../roadmap/promptcadence-roadmap.md)); decision record D-8 (compaction is a view; packages
 plan summarization, applications execute it).
 

@@ -4,6 +4,8 @@
 Depends on `baseaicore>=0.4.1` (for nothing beyond the error base and clock helpers — the
 `DataClassification` addition is not used here, but the arc pins one baseline).
 **Target:** `cutctx 0.1.0` at the end of Phase 2; `0.2.0` (hardened) before PromptCadence 1.0.
+**Shipped:** `0.1.0` is published (row E1). The `0.2.0` hardening minor was never scheduled and is
+not what PromptCadence 1.0 shipped against — it pins `cutctx>=0.1,<0.2`.
 
 The ordering principle is the suite's usual one: the deterministic core and its invariants first,
 so PromptCadence's loop can be built against a compaction library whose behaviour is already
