@@ -14,6 +14,7 @@ report copies the plan's totals, so there is exactly one derivation of "after" i
 
 from __future__ import annotations
 
+from dataclasses import replace
 from types import MappingProxyType
 from typing import TYPE_CHECKING, Final
 
@@ -212,13 +213,10 @@ class CompactionExecutor:
     @staticmethod
     def _masked(turn: TranscriptTurn, replacement: TurnReplacement) -> TranscriptTurn:
         """Return ``turn`` with the plan's stub in place of its body."""
-        return TranscriptTurn(
-            turn_id=turn.turn_id,
-            role=turn.role,
+        return replace(
+            turn,
             content=replacement.content,
             token_estimate=replacement.token_estimate,
-            tool_call_id=turn.tool_call_id,
-            pinned=turn.pinned,
             metadata={**turn.metadata, KIND_KEY: MASKED_KIND},
         )
 

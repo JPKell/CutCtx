@@ -37,6 +37,7 @@ with its own actions. ``budget_unmet`` is derived and never declared (`C1_HANDOF
 
 from __future__ import annotations
 
+from dataclasses import dataclass, replace
 from typing import TYPE_CHECKING, Final
 
 from baseaicore import ValidationError
@@ -68,21 +69,13 @@ _REMOVING: Final = frozenset({Action.DROP, Action.SUMMARIZE})
 """The two actions that take a turn out of the view. ``KEEP`` and ``MASK`` leave it in place."""
 
 
+@dataclass(slots=True)
 class _Resolution:
     """What the chain has decided about one real turn so far, before the plan is built."""
 
-    __slots__ = ("action", "group", "replacement")
-
-    def __init__(
-        self,
-        action: Action,
-        replacement: TurnReplacement | None = None,
-        group: str | None = None,
-    ) -> None:
-        """Bind a decision."""
-        self.action = action
-        self.replacement = replacement
-        self.group = group
+    action: Action
+    replacement: TurnReplacement | None = None
+    group: str | None = None
 
 
 class PolicyChain:
@@ -265,14 +258,10 @@ def _project(
             turns.append(turn)
         elif state.action is Action.MASK and state.replacement is not None:
             turns.append(
-                TranscriptTurn(
-                    turn_id=turn.turn_id,
-                    role=turn.role,
+                replace(
+                    turn,
                     content=state.replacement.content,
                     token_estimate=state.replacement.token_estimate,
-                    tool_call_id=turn.tool_call_id,
-                    pinned=turn.pinned,
-                    metadata=turn.metadata,
                 )
             )
         elif state.action is Action.SUMMARIZE and state.group is not None:

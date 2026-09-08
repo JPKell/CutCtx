@@ -50,11 +50,11 @@ previous attempt's findings (repair/revision)   ``role=USER``, ``pinned=True``
 ============================================  ==========================================
 
 The order of the rows *is* the transcript order, oldest-first, so that dropping "oldest first"
-means dropping notes before summaries; the reduction order then becomes a
-:class:`~cutctx.policies.DropOldestPolicy`-shaped chain over that ordering at row J3, and the
-``metadata`` column is how a later, IdeaPress-shaped policy will express "distant before
-adjacent". **No policy reads ``metadata`` today, and none should learn to without a shipped
-policy that documents the keys it consumes** (spec §4 calls it opaque).
+means dropping notes before summaries; the reduction order is a
+:class:`~cutctx.policies.DropOldestPolicy`-shaped chain over that ordering, and the ``metadata``
+column is how a later, IdeaPress-shaped policy would express "distant before adjacent". **No
+policy reads ``metadata`` today, and none should learn to without a shipped policy that documents
+the keys it consumes** (spec §4 calls it opaque).
 """
 
 from __future__ import annotations
@@ -314,13 +314,11 @@ class TurnReplacement:
     """The body a :attr:`Action.MASK` puts in a turn's place, and what it is estimated to cost.
 
     One value rather than two optional fields on :class:`TurnAction`, so that "a mask has a body
-    **and** an estimate" is a shape rather than a rule someone has to remember. Phase 1 emits
-    none — no policy here masks — but the executor applies one and the plan's arithmetic counts
-    one, so the type is settled now rather than being bolted onto a frozen, golden-tested plan at
-    row E1.
+    **and** an estimate" is a shape rather than a rule someone has to remember.
 
-    The stub's *format* is Phase 2's to define: a labelled placeholder carrying the original's
-    hash and token estimate, **never an excerpt** (spec §14). CutCtx builds no stub here; it
+    The stub's *format* belongs to the policy that writes it —
+    :func:`cutctx.policies.masking.stub_for`: a labelled placeholder carrying the original's hash
+    and token estimate, **never an excerpt** (spec §14). The executor builds no stub; it
     substitutes the one the plan carries.
 
     Args:
@@ -510,14 +508,11 @@ class CompactionPlan:
             (spec §19); golden plans for old versions are kept for the life of a major.
         estimator_ratio: The ``chars_per_token`` of the character-ratio default when it produced
             an estimate on this plan, and ``None`` when no estimate on this plan came from it —
-            which is every Phase 1 plan, since :class:`~cutctx.policies.DropOldestPolicy` only
-            adds up figures the caller supplied. It rides on the plan so that an estimate is
-            never mistaken for a count (ADR-0016).
-        budget_unmet: ``True`` when the plan is still over budget. Settled in Phase 1 although
-            only an exhausted **chain** can reach it (spec §13's last row, Phase 2's
-            ``PolicyChain``): it is a Phase 2 *concept* but a Phase 1 *shape*, and adding a field
-            to a frozen, golden-tested type at row E1 would invalidate every golden written here.
-            It is not a policy's opinion — construction computes it as
+            every plan from :class:`~cutctx.policies.DropOldestPolicy`, which only adds up figures
+            the caller supplied. It rides on the plan so that an estimate is never mistaken for a
+            count (ADR-0016).
+        budget_unmet: ``True`` when the plan is still over budget (spec §13's last row). It is
+            not a policy's opinion — construction computes it as
             ``tokens_after_estimate > budget.max_tokens`` and refuses a plan that disagrees, which
             is what makes the budget outcome trichotomous and honest: a plan fits, or it says it
             does not, or :class:`~cutctx.errors.BudgetUnsatisfiable` was raised before any plan

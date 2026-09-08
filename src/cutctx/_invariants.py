@@ -1,10 +1,9 @@
 """The rules of spec §11, in one place, enforced by validation and not by convention.
 
 **Why this module is private and still the most public thing in the package.** Every policy
-CutCtx will ever ship routes through it: row E1 adds observation masking, summarization and
-``PolicyChain`` against it, PromptCadence wires it in at row I1, and IdeaPress's prose reduction
-order becomes a chain over it at row J3. It is where a rule is written once, so that the fourth
-policy cannot get it subtly different from the first.
+CutCtx ships routes through it — observation masking, summarization, ``DropOldestPolicy`` and the
+``PolicyChain`` that composes them — and so does every consumer's chain. It is where a rule is
+written once, so that the fourth policy cannot get it subtly different from the first.
 
 The invariants
 --------------
@@ -58,7 +57,7 @@ policy may act on.
 The closure does **not** move the :class:`~cutctx.errors.BudgetUnsatisfiable` threshold. That
 threshold is the strict untouchable set of contract 2, whose turns can never be reduced by any
 means; a turn locked only by the closure is still maskable, so refusing on its account would
-refuse budgets that row E1's policies can meet.
+refuse budgets the masking policy can meet.
 """
 
 from __future__ import annotations

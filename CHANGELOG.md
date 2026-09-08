@@ -6,6 +6,12 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Changed
+- Internal tightening with no behavioural change: the chain's per-turn resolution is a dataclass,
+  and masked turns are built with `dataclasses.replace` in both the executor and the chain's
+  projection. Docstrings that still described masking, summarization and the chain as future
+  rows now describe them as shipped.
+
 ### Added
 
 - `## Install` in `README.md` and `docs/quickstart.md` (+ `docs/quickstart.py`, a runnable
