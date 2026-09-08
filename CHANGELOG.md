@@ -6,6 +6,14 @@ All notable changes to this project are documented here. The format follows
 
 ## [Unreleased]
 
+### Added
+
+- `## Install` in `README.md` and `docs/quickstart.md` (+ `docs/quickstart.py`, a runnable
+  ten-line example) — the only two package repos M9's Group 1 pass had skipped (M9 re-audit,
+  row L7, item D1(a)).
+- `tests/unit/test_readme_version.py` — asserts the version README.md states after its `Status:`
+  line equals `__about__.__version__`, so a release cannot leave the README stale (row L7).
+
 ## [0.1.0] — 2026-09-03
 
 The first release. Phases 1 and 2 of the

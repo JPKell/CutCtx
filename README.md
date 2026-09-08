@@ -14,6 +14,15 @@ plan/executor split and all four shipped policies — `ObservationMaskingPolicy`
 * Specification: [`docs/packages/cutctx/spec.md`](docs/packages/cutctx/spec.md) ·
   plan: [`docs/packages/cutctx/development-plan.md`](docs/packages/cutctx/development-plan.md)
 
+## Install
+
+```bash
+pip install cutctx
+```
+
+The only runtime dependency is `baseaicore`. See [`docs/quickstart.md`](docs/quickstart.md) for a
+ten-line runnable example.
+
 ## The shape: plan → fulfil → apply
 
 This is the one thing to understand before using the package, and it is friction on purpose.
